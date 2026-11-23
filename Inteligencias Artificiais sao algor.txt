@@ -1,0 +1,25 @@
+Inteligencias Artificiais sao algoritmos que aprendem com dados == Machine Learning ou Deep Learning 
+
+Deep Learning usa camadas para processor dados e analisar-los para tomar  decisoes mais inteligentes 
+
+Com Deep Learning, se grava exemplos reais e o modelo aprende padroes mais ricos na sequencia temporal (movimentos com a mao por exemplo), ou seja, coleta dados, Analisa, replica e melhora ele mesmo.
+
+Deep Learning seria o algoritmo fazendo a identificacao de padroes em uma imagem.
+
+ CONCEITO DE REDES NEURAIS E COMO ELAS APRENDEM
+
+Tensores -> Vetores multidimensionai, em caso de pessoas, usamos apenas 2
+
+tensores nao entendem letras, somente numeros, ent uma Array de pessoas, precisariamos transformar-las em numero de 0-1
+
+mas em um conceito de idade por exemplo, vai mais do que um, para normalizer isso, temos a formula 
+
+idade_normalizada = (idade-idade_Min)/(idade_max - idade_min)
+
+Rede Neural
+
+Seria um monte de operacoes Matematicas conectadas tentando encontrar padroes escondidos nos dados. 
+
+temos a categoria chamada One Hot Take, quando algum dados so pode ser 1 das opcoes mencionadas, assim facilitando como tipar cada dado para o algoritmo poder aprender
+
+Cada input vira 1 parametron (idade, cor Loc) e nisso eh enviada para a primeira camada do modelo a Hidden Layer (camda oculta) que eh composto por varios neuronios que sao como mini-calculadoras matematicas ela aprende as relacoes entre os dados de entrada. Apos passar por todos os filtros da Hidden Layer, ela saira na Output Layer (Camada de Saida) onde cada neurônio representa 1 categoria possível, ela tem o papel de transformar tudo oq foi aprendido na camada anterior em probabilidades 
