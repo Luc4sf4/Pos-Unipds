@@ -50,16 +50,27 @@ async function trainModel(inputXs, outputYs) {
             verbose: 0,
             epochs: 100,
             shuffle: true,
-            callbacks: {
-                onEpochEnd: (epoch, logs) => {
-                    console.log(`Epoch ${epoch}: loss = ${logs.loss}`);
-                }
-            }
+            // callbacks: {
+            //     onEpochEnd: (epoch, logs) => {
+            //         console.log(`Epoch ${epoch}: loss = ${logs.loss}`);
+            //     }
+            // }
         }
     )
 
     return model;
 }
+async function predict(model, pessoaTensorNormalizado) {
+    //transformar o array JS para o tensor do tensorflow
+    const tfInput = tf.tensor2d([pessoaTensorNormalizado]);
+
+    //fazendo a previsão (output de um vetor de 3 probabilidades)
+    const pred = model.predict(tfInput);
+    const predArray = await pred.array();
+    // console.log(`Predição: ${predArray}`);
+    return predArray[0].map((prob, index) => ({ prob, index }));
+}
+
 // Exemplo de pessoas para treino (cada pessoa com idade, cor e localização)
 // const pessoas = [
 //     { nome: "Erick", idade: 30, cor: "azul", localizacao: "São Paulo" },
@@ -96,4 +107,26 @@ const tensorLabels = [
 const inputXs = tf.tensor2d(tensorPessoasNormalizado)
 const outputYs = tf.tensor2d(tensorLabels)
 
-const model = trainModel(inputXs, outputYs);
+const model = await trainModel(inputXs, outputYs);
+
+const pessoa = { nome: "João", idade: 28, cor: "verde", localizacao: "São Paulo" };
+
+// Normalizando os dados de entrada para a pessoa a ser classificada
+// exemplo: idade normalizada = (idade - idade_min) / (idade_max - idade_min)
+
+const pessoaTensorNormalizado = [
+    0.2, // idade normalizada
+    1,   // azul
+    0,   // vermelho
+    0,   // verde
+    0,   // São Paulo
+    1,   // Rio
+    0    // Curitiba
+]
+
+const predictions = await predict(model, pessoaTensorNormalizado);
+const result = predictions
+.sort((a, b) => b.prob - a.prob)
+.map(p => `${labelsNomes[p.index]}: ${(p.prob * 100).toFixed(2)}%`)
+.join('\n ');
+console.log(result);// Pegando a categoria com maior probabilidade
