@@ -17,9 +17,9 @@ const WEIGHTS = {
  // treina a rede neural para identificar padrões de compra dos usuários e recomendar produtos com base nas idades
  // ou seja, uma pessoa de 25 anos que comprou um produto, a rede neural vai aprender que pessoas de 25 anos tendem
  //  a comprar esse produto e recomendar para outras pessoas de 25 anos
- function makeContext(catalog, users) {
+ function makeContext(products, users) {
         const ages = users.map(u => u.age);
-        const prices = catalog.map(p => p.price);
+        const prices = products.map(p => p.price);
 
         const minAge = Math.min(...ages)
         const maxAge = Math.max(...ages)
@@ -27,8 +27,8 @@ const WEIGHTS = {
         const minPrice = Math.min(...prices)
         const maxPrice = Math.max(...prices)
 
-        const colors = [...new Set(catalog.map(p => p.color))];
-        const categories = [...new Set(catalog.map(p => p.category))];
+        const colors = [...new Set(products.map(p => p.color))];
+        const categories = [...new Set(products.map(p => p.category))];
 
         const colorIndex = Object.fromEntries(
             colors.map((color, index) => {
@@ -57,7 +57,7 @@ const WEIGHTS = {
         });
         // Calcula a média por produto depois de contar todas as compras.
         const productAverageNorm = Object.fromEntries(
-            catalog.map(product => {
+            products.map(product => {
                 const avg = ageCounts[product.name]
                     ? ageSums[product.name] / ageCounts[product.name]
                     : midAge;
@@ -67,7 +67,7 @@ const WEIGHTS = {
         );
 
         return {
-            catalog,
+            products,
             users,
             colorIndex,
             categoriesIndex,
@@ -114,14 +114,52 @@ function encodeProduct(product, context) {
 
 }
 
+// funcao usada para retornar o perfil de compra deste usuario em especifico 
+function encodeUser(user, context) {
+    if(user.purchases.length){
+        return tf.stack(user.purchases.map(
+            product => encodeProduct(product, context)
+        ))
+        .mean(0)
+        .reshape([
+            1,
+            context.dimensions
+        ])
+    }
+}
+
+
+function createTrainingData( context ) {
+    const inputs = [];
+    const labels = [];
+    context.users.forEach(user => {
+        const uservector = encodeUser(user, context).dataSync();
+        context.products.forEach(product => {
+            const productVector = encodeProduct(product, context).dataSync();
+
+            const label = user.purchases.some(purchases => purchases.name === product.name) ? 1 : 0;
+
+            //combinar user + product 
+            inputs.push([...uservector, ...productVector]);
+            labels.push(label);
+        })
+        ;
+    })
+    return{
+        xs: tf.tensor2d(inputs),
+        ys: tf.tensor2d(labels, [labels.length, 1]),
+        // tamanho = userVector + productVector
+        inputDimensions: context.dimensions * 2,
+    }
+}
 async function trainModel({ users }) {
     console.log('Training model with users:', users)
 
     postMessage({ type: workerEvents.progressUpdate, progress: { progress: 50 } });
-    const catalog = await (await fetch('/data/products.json')).json();
+    const products = await (await fetch('/data/products.json')).json();
 
-    const context = makeContext(catalog, users);
-    context.productVectors = catalog.map(product => {
+    const context = makeContext(products, users);
+    context.productVectors = products.map(product => {
         return {
             name: product.name,
             //quando indentificar a probabilidade esta, ja temos os dados no meta dados
@@ -133,6 +171,8 @@ async function trainModel({ users }) {
 
     _globalCtx = context;
 
+    const trainData = createTrainingData(context);
+    debugger;
     postMessage({
         type: workerEvents.trainingLog,
         epoch: 1,
